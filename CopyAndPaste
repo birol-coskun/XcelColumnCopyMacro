@@ -1,0 +1,63 @@
+Sub CopyAndPaste()
+
+Dim wsSource As Worksheet
+Dim wsDestination As Worksheet
+Dim columnsToCopy() As Variant
+Dim fileDialog As FileDialog
+Dim selectedFile As String
+
+' Disable screen updating and manual calculation for performance
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+
+' Use the file dialog to select a file
+Set fileDialog = Application.FileDialog(msoFileDialogOpen)
+
+If fileDialog.Show = -1 Then
+    selectedFile = fileDialog.SelectedItems(1)
+Else
+    MsgBox "No file selected. Operation canceled."
+    Exit Sub
+End If
+
+' Attempt to open the selected workbook's first sheet
+On Error Resume Next
+Set wsSource = Workbooks.Open(selectedFile).Sheets(1)
+On Error GoTo 0
+
+If wsSource Is Nothing Then
+    MsgBox "Unable to open the worksheet."
+    Exit Sub
+End If
+
+' Add a new worksheet for the destination
+Set wsDestination = Worksheets.Add
+
+' Specify the columns to copy
+columnsToCopy = Array("A", "B", "C", "E", "F", "H", "P", "AP", "AQ", "AR", "AS", "BB", "BP", "BZ", "CA", "CI", "CJ", "CK", "CL", "CP", "CR", "CU", "CV", "CW")
+
+' Copy the specified columns to the new worksheet, excluding the first two rows
+Dim column As Variant
+Dim destinationColumn As Integer
+destinationColumn = 1
+
+For Each column In columnsToCopy
+    wsSource.Range(column & "3:" & column & wsSource.Cells(wsSource.Rows.Count, column).End(xlUp).Row).Copy
+    wsDestination.Cells(1, destinationColumn).PasteSpecial Paste:=xlPasteAll, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    destinationColumn = destinationColumn + 1
+Next column
+
+' Sum values in column K and add the total at the bottom of column K
+Dim lastRow As Long
+lastRow = wsDestination.Cells(wsDestination.Rows.Count, "K").End(xlUp).Row
+wsDestination.Cells(lastRow + 1, "K").Formula = "=SUM(K3:K" & lastRow & ")"
+
+' Clear the clipboard and re-enable screen updating and automatic calculation
+Application.CutCopyMode = False
+Application.ScreenUpdating = True
+Application.Calculation = xlCalculationAutomatic
+
+' Display a message box indicating success
+MsgBox "Selected columns copied, and the sum of column K added below (excluding the first two rows)."
+
+End Sub
